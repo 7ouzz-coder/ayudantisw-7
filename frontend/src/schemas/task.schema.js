@@ -14,3 +14,7 @@ export const createTaskSchema = z.object({
     .max(500, 'La descripción no puede superar los 500 caracteres')
     .optional()
 });
+
+export const updateTaskSchema = createTaskSchema.extend({
+  completed: z.boolean().optional(),
+});

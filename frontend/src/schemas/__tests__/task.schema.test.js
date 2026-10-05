@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { createTaskSchema } from '../task.schema';
+import { createTaskSchema, updateTaskSchema } from '../task.schema';
 
 // Pruebas unitarias para validar las reglas del esquema Zod de tareas
 describe('Pruebas unitarias: createTaskSchema (Zod)', () => {
@@ -121,4 +121,55 @@ describe('Pruebas unitarias: createTaskSchema (Zod)', () => {
   //   const result = createTaskSchema.safeParse(invalidData);
   //   expect(result.success).toBe(true);
   // });
+});
+
+describe('Pruebas unitarias: updateTaskSchema (Zod)', () => {
+  it('acepta los datos válidos y elimina los espacios sobrantes', () => {
+    const result = updateTaskSchema.safeParse({
+      title: '  Preparar presentación  ',
+      description: '  Revisar diapositivas  ',
+      completed: true,
+    });
+
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data).toEqual({
+        title: 'Preparar presentación',
+        description: 'Revisar diapositivas',
+        completed: true,
+      });
+    }
+  });
+
+  it('acepta omitir la descripción o el estado completado', () => {
+    expect(updateTaskSchema.safeParse({ title: 'Comprar materiales' }).success).toBe(true);
+    expect(updateTaskSchema.safeParse({
+      title: 'Comprar materiales',
+      description: 'Buscar cuadernos',
+    }).success).toBe(true);
+    expect(updateTaskSchema.safeParse({
+      title: 'Comprar materiales',
+      completed: false,
+    }).success).toBe(true);
+  });
+
+  it('rechaza un título menor a 3 caracteres', () => {
+    const result = updateTaskSchema.safeParse({ title: 'AB' });
+
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.issues.find((issue) => issue.path.includes('title'))?.message)
+        .toBe('El título debe tener al menos 3 caracteres');
+    }
+  });
+
+  it('rechaza un título mayor a 150 caracteres', () => {
+    const result = updateTaskSchema.safeParse({ title: 'A'.repeat(151) });
+
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.issues.find((issue) => issue.path.includes('title'))?.message)
+        .toBe('El título no puede superar los 150 caracteres');
+    }
+  });
 });
